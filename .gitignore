@@ -1,0 +1,7 @@
+.claude/
+.idea/
+.vscode/
+bin/
+dist/
+node_modules/
+CLAUDE.md

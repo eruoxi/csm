@@ -1,0 +1,69 @@
+{
+  "name": "@eruoxi/csm",
+  "version": "0.0.1",
+  "description": "Claude Code Settings Manager - 管理多个 Claude Code 配置档案",
+  "main": "dist/index.js",
+  "bin": {
+    "csm": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "pkg": "pkg package.json --targets node18-win-x64,node18-macos-x64,node18-linux-x64 --out-path ./bin"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "settings",
+    "config",
+    "manager",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eruoxi/csm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eruoxi/csm/issues"
+  },
+  "homepage": "https://github.com/eruoxi/csm#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "dependencies": {
+    "archiver": "^6.0.1",
+    "chalk": "^4.1.2",
+    "cli-highlight": "^2.1.11",
+    "commander": "^14.0.3",
+    "date-fns": "^2.30.0",
+    "fs-extra": "^11.2.0",
+    "inquirer": "^8.2.6",
+    "unzipper": "^0.12.3"
+  },
+  "devDependencies": {
+    "@types/archiver": "^6.0.2",
+    "@types/fs-extra": "^11.0.4",
+    "@types/inquirer": "^8.2.6",
+    "@types/node": "^20.12.7",
+    "@types/unzipper": "^0.10.11",
+    "pkg": "^5.8.1",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.0"
+  },
+  "pkg": {
+    "scripts": "dist/**/*.js"
+  }
+}
