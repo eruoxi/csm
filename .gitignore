@@ -1,7 +1,12 @@
+node_modules/
+dist/
+bin/
+*.log
+.DS_Store
+Thumbs.db
 .claude/
 .idea/
 .vscode/
-bin/
-dist/
-node_modules/
-CLAUDE.md
+
+# 敏感配置文件
+docs/*.json

@@ -1,17 +1,17 @@
 import { Command } from 'commander';
 import { ProfileManager } from '../lib/profile';
-import { StateManager } from '../lib/state';
+import { stateManager } from '../lib/state';
 import { success } from '../utils/logger';
 import { handleCommandError } from '../utils/errors';
+import { t } from '../i18n';
 
 export function initRenameCommand(program: Command) {
   program
     .command('rename <oldName> <newName>')
-    .description('重命名配置档案')
+    .description(t('cli.rename.description'))
     .action(async (oldName, newName) => {
       try {
         const profileManager = new ProfileManager();
-        const stateManager = new StateManager();
 
         // 执行重命名（rename 方法会检查源存在和目标不存在）
         await profileManager.rename(oldName, newName);
@@ -22,9 +22,9 @@ export function initRenameCommand(program: Command) {
           await stateManager.setActiveProfile(newName);
         }
 
-        success(`配置档案已重命名: ${oldName} -> ${newName}`);
+        success(t('success.profileRenamed', { oldName, newName }));
       } catch (err) {
-        handleCommandError(err, '重命名');
+        handleCommandError(err, 'renameFailed');
       }
     });
 }

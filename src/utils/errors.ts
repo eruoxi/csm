@@ -4,6 +4,9 @@
  * 提供统一的错误类型和处理方式
  */
 
+import { error as logError, info as logInfo } from './logger';
+import { t } from '../i18n';
+
 /**
  * CSM 错误代码
  */
@@ -50,8 +53,8 @@ export class CsmError extends Error {
   static profileNotFound(name: string): CsmError {
     return new CsmError(
       CsmErrorCode.PROFILE_NOT_FOUND,
-      `配置 "${name}" 不存在`,
-      `使用 "csm list" 查看所有可用配置`
+      t('error.profileNotFound', { name }),
+      t('info.useListCommand')
     );
   }
 
@@ -61,8 +64,8 @@ export class CsmError extends Error {
   static profileAlreadyExists(name: string): CsmError {
     return new CsmError(
       CsmErrorCode.PROFILE_ALREADY_EXISTS,
-      `配置 "${name}" 已存在`,
-      `使用 "csm show ${name}" 查看该配置`
+      t('error.profileAlreadyExists', { name }),
+      t('info.useShowCommand', { name })
     );
   }
 
@@ -72,7 +75,7 @@ export class CsmError extends Error {
   static profileNameInvalid(name: string, reason: string): CsmError {
     return new CsmError(
       CsmErrorCode.PROFILE_NAME_INVALID,
-      `配置名称 "${name}" 无效`,
+      t('error.profileNameInvalidWithReason', { name, reason }),
       reason
     );
   }
@@ -83,7 +86,7 @@ export class CsmError extends Error {
   static profileCorrupted(name: string, details?: string): CsmError {
     return new CsmError(
       CsmErrorCode.PROFILE_CORRUPTED,
-      `配置 "${name}" 文件已损坏`,
+      t('error.profileCorrupted', { name }),
       details
     );
   }
@@ -94,7 +97,7 @@ export class CsmError extends Error {
   static validationError(errors: string[]): CsmError {
     return new CsmError(
       CsmErrorCode.VALIDATION_ERROR,
-      '配置验证失败',
+      t('validation.validationFailed'),
       errors.join('\n  - ')
     );
   }
@@ -107,7 +110,7 @@ export function formatError(error: unknown): string {
   if (error instanceof CsmError) {
     let message = error.message;
     if (error.details) {
-      message += `\n  提示: ${error.details}`;
+      message += `\n  ${t('info.tip', { message: error.details })}`;
     }
     return message;
   }
@@ -133,14 +136,12 @@ export function getErrorCode(error: unknown): CsmErrorCode {
  * 处理命令错误（统一错误处理模式）
  * 打印错误信息并退出进程
  */
-export function handleCommandError(err: unknown, commandName: string): never {
+export function handleCommandError(err: unknown, commandKey: string): never {
   if (err instanceof CsmError && err.details) {
-    const { error, info } = require('./logger');
-    error(err.message);
-    info(`提示: ${err.details}`);
+    logError(err.message);
+    logInfo(t('info.tip', { message: err.details }));
   } else {
-    const { error } = require('./logger');
-    error(`${commandName}失败: ${formatError(err)}`);
+    logError(`${t(`command.${commandKey}`)}: ${formatError(err)}`);
   }
   process.exit(1);
 }

@@ -7,6 +7,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import unzipper from 'unzipper';
+import { t } from '../i18n';
 
 export interface BackupValidationResult {
   valid: boolean;
@@ -75,14 +76,14 @@ export async function validateBackup(backupPath: string): Promise<BackupValidati
   // 1. 检查文件存在
   if (!(await fs.pathExists(backupPath))) {
     result.valid = false;
-    result.errors.push('备份文件不存在');
+    result.errors.push(t('backup.fileNotExist'));
     return result;
   }
 
   // 2. 检查文件扩展名
   if (!backupPath.endsWith('.zip')) {
     result.valid = false;
-    result.errors.push('备份文件必须是 .zip 格式');
+    result.errors.push(t('backup.mustBeZip'));
     return result;
   }
 
@@ -91,15 +92,15 @@ export async function validateBackup(backupPath: string): Promise<BackupValidati
     const stats = await fs.stat(backupPath);
     if (stats.size === 0) {
       result.valid = false;
-      result.errors.push('备份文件为空');
+      result.errors.push(t('error.backupEmpty'));
       return result;
     }
     if (stats.size > 100 * 1024 * 1024) { // 100MB
-      result.warnings.push('备份文件较大 (>100MB)，恢复可能需要一些时间');
+      result.warnings.push(t('warn.backupLarge'));
     }
   } catch (error) {
     result.valid = false;
-    result.errors.push(`无法读取备份文件: ${error instanceof Error ? error.message : String(error)}`);
+    result.errors.push(t('error.backupCorrupted', { error: error instanceof Error ? error.message : String(error) }));
     return result;
   }
 
@@ -111,7 +112,7 @@ export async function validateBackup(backupPath: string): Promise<BackupValidati
     for (const entry of entries) {
       if (!isEntryPathSafe(entry)) {
         result.valid = false;
-        result.errors.push(`检测到不安全的路径: ${entry}`);
+        result.errors.push(t('error.unsafePathDetected', { path: entry }));
         result.hasPathTraversalRisk = true;
         return result;
       }
@@ -123,7 +124,7 @@ export async function validateBackup(backupPath: string): Promise<BackupValidati
     );
 
     if (!hasProfiles) {
-      result.warnings.push('备份中没有包含任何配置文件');
+      result.warnings.push(t('warn.backupNoProfiles'));
     }
 
     // 统计内容
@@ -143,12 +144,12 @@ export async function validateBackup(backupPath: string): Promise<BackupValidati
       !result.contents.hasState &&
       result.contents.profileCount === 0) {
       result.valid = false;
-      result.errors.push('备份文件不包含任何有效内容');
+      result.errors.push(t('error.backupNoContent'));
     }
 
   } catch (error) {
     result.valid = false;
-    result.errors.push(`备份文件格式无效: ${error instanceof Error ? error.message : String(error)}`);
+    result.errors.push(t('error.backupInvalidFormat', { error: error instanceof Error ? error.message : String(error) }));
   }
 
   return result;

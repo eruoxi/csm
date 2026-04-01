@@ -2,6 +2,9 @@
  * CSM 类型定义
  */
 
+// 支持的语言
+export type SupportedLanguage = 'zh-CN' | 'en-US';
+
 // Claude Code Settings 结构
 export interface ClaudeSettings {
   env?: Record<string, string>;
@@ -21,6 +24,7 @@ export interface ClaudeSettings {
 export interface CsmState {
   activeProfile: string | null;
   version: string;
+  language?: SupportedLanguage;
 }
 
 // 合并选项

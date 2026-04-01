@@ -4,6 +4,7 @@ import { getCsmDir, getProfilesDir } from '../utils/file';
 import type { ClaudeSettings } from '../types';
 import { validateProfileName } from '../utils/validator';
 import { CsmError, CsmErrorCode } from '../utils/errors';
+import { t } from '../i18n';
 
 /**
  * Profile Manager - Manage Claude Code configuration profiles
@@ -74,7 +75,7 @@ export class ProfileManager {
    */
   private async readProfileFile(name: string): Promise<ClaudeSettings | null> {
     if (!validateProfileName(name)) {
-      throw CsmError.profileNameInvalid(name, '只允许字母、数字、连字符和下划线');
+      throw CsmError.profileNameInvalid(name, t('validation.nameInvalidChars'));
     }
 
     await this.ensureDirs();
@@ -100,7 +101,7 @@ export class ProfileManager {
    */
   async create(name: string, settings: ClaudeSettings): Promise<void> {
     if (!validateProfileName(name)) {
-      throw CsmError.profileNameInvalid(name, '只允许字母、数字、连字符和下划线');
+      throw CsmError.profileNameInvalid(name, t('validation.nameInvalidChars'));
     }
 
     await this.ensureDirs();
@@ -119,7 +120,7 @@ export class ProfileManager {
    */
   async delete(name: string): Promise<boolean> {
     if (!validateProfileName(name)) {
-      throw CsmError.profileNameInvalid(name, '只允许字母、数字、连字符和下划线');
+      throw CsmError.profileNameInvalid(name, t('validation.nameInvalidChars'));
     }
 
     await this.ensureDirs();
@@ -140,7 +141,7 @@ export class ProfileManager {
    */
   async exists(name: string): Promise<boolean> {
     if (!validateProfileName(name)) {
-      throw CsmError.profileNameInvalid(name, '只允许字母、数字、连字符和下划线');
+      throw CsmError.profileNameInvalid(name, t('validation.nameInvalidChars'));
     }
 
     await this.ensureDirs();
@@ -153,10 +154,10 @@ export class ProfileManager {
    */
   async rename(oldName: string, newName: string): Promise<void> {
     if (!validateProfileName(oldName)) {
-      throw CsmError.profileNameInvalid(oldName, '只允许字母、数字、连字符和下划线');
+      throw CsmError.profileNameInvalid(oldName, t('validation.nameInvalidChars'));
     }
     if (!validateProfileName(newName)) {
-      throw CsmError.profileNameInvalid(newName, '只允许字母、数字、连字符和下划线');
+      throw CsmError.profileNameInvalid(newName, t('validation.nameInvalidChars'));
     }
 
     await this.ensureDirs();

@@ -2,6 +2,7 @@
  * 配置验证工具
  */
 import type { ClaudeSettings, ValidationResult } from '../types';
+import { t } from '../i18n';
 
 // Profile 名称最大长度
 const MAX_PROFILE_NAME_LENGTH = 64;
@@ -29,11 +30,11 @@ export function validateProfileNameWithResult(name: string): ValidationResult {
   const errors: string[] = [];
 
   if (!name || name.length === 0) {
-    errors.push('配置名称不能为空');
+    errors.push(t('validation.nameEmpty'));
   } else if (name.length > MAX_PROFILE_NAME_LENGTH) {
-    errors.push(`配置名称长度不能超过 ${MAX_PROFILE_NAME_LENGTH} 个字符`);
+    errors.push(t('validation.nameTooLong', { max: MAX_PROFILE_NAME_LENGTH }));
   } else if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-    errors.push('配置名称只能包含字母、数字、连字符和下划线');
+    errors.push(t('validation.nameInvalidChars'));
   }
 
   return {
@@ -49,7 +50,7 @@ function validateSettingsInternal(settings: unknown, collectDetails: boolean): {
   const errors: string[] = [];
 
   if (!settings || typeof settings !== 'object') {
-    errors.push('配置必须是一个非空对象');
+    errors.push(t('validation.settingsNotObject'));
     return { valid: false, errors };
   }
 
@@ -58,15 +59,15 @@ function validateSettingsInternal(settings: unknown, collectDetails: boolean): {
   // 验证 env 字段
   if (s.env !== undefined) {
     if (typeof s.env !== 'object' || s.env === null) {
-      errors.push('env 字段必须是一个对象');
+      errors.push(t('validation.envNotObject'));
     } else {
       const envEntries = Object.entries(s.env as Record<string, unknown>);
       for (const [key, value] of envEntries) {
         if (typeof value !== 'string') {
           if (collectDetails) {
-            errors.push(`env.${key} 的值必须是字符串，实际为 ${typeof value}`);
+            errors.push(t('validation.envValueNotString', { key, type: typeof value }));
           } else {
-            return { valid: false, errors: ['env 字段包含非字符串值'] };
+            return { valid: false, errors: [t('validation.envNonStringValue')] };
           }
         }
       }
@@ -76,20 +77,20 @@ function validateSettingsInternal(settings: unknown, collectDetails: boolean): {
   // 验证 permissions 字段
   if (s.permissions !== undefined) {
     if (typeof s.permissions !== 'object' || s.permissions === null) {
-      errors.push('permissions 字段必须是一个对象');
+      errors.push(t('validation.permissionsNotObject'));
     } else {
       const perm = s.permissions as Record<string, unknown>;
 
       if (perm.allow !== undefined) {
         if (!Array.isArray(perm.allow)) {
-          errors.push('permissions.allow 必须是数组');
+          errors.push(t('validation.permissionsAllowNotArray'));
         } else {
           const invalidItems = perm.allow.filter(item => typeof item !== 'string');
           if (invalidItems.length > 0) {
             if (collectDetails) {
-              errors.push(`permissions.allow 包含 ${invalidItems.length} 个非字符串元素`);
+              errors.push(t('validation.permissionsAllowInvalid', { count: invalidItems.length }));
             } else {
-              return { valid: false, errors: ['permissions.allow 包含非字符串元素'] };
+              return { valid: false, errors: [t('validation.permissionsAllowInvalid', { count: invalidItems.length })] };
             }
           }
         }
@@ -97,14 +98,14 @@ function validateSettingsInternal(settings: unknown, collectDetails: boolean): {
 
       if (perm.deny !== undefined) {
         if (!Array.isArray(perm.deny)) {
-          errors.push('permissions.deny 必须是数组');
+          errors.push(t('validation.permissionsDenyNotArray'));
         } else {
           const invalidItems = perm.deny.filter(item => typeof item !== 'string');
           if (invalidItems.length > 0) {
             if (collectDetails) {
-              errors.push(`permissions.deny 包含 ${invalidItems.length} 个非字符串元素`);
+              errors.push(t('validation.permissionsDenyInvalid', { count: invalidItems.length }));
             } else {
-              return { valid: false, errors: ['permissions.deny 包含非字符串元素'] };
+              return { valid: false, errors: [t('validation.permissionsDenyInvalid', { count: invalidItems.length })] };
             }
           }
         }
@@ -115,15 +116,15 @@ function validateSettingsInternal(settings: unknown, collectDetails: boolean): {
   // 验证 enabledPlugins 字段
   if (s.enabledPlugins !== undefined) {
     if (typeof s.enabledPlugins !== 'object' || s.enabledPlugins === null) {
-      errors.push('enabledPlugins 字段必须是一个对象');
+      errors.push(t('validation.pluginsNotObject'));
     } else {
       const plugins = s.enabledPlugins as Record<string, unknown>;
       for (const [key, value] of Object.entries(plugins)) {
         if (typeof value !== 'boolean') {
           if (collectDetails) {
-            errors.push(`enabledPlugins.${key} 的值必须是布尔值，实际为 ${typeof value}`);
+            errors.push(t('validation.pluginValueNotBoolean', { key, type: typeof value }));
           } else {
-            return { valid: false, errors: ['enabledPlugins 字段包含非布尔值'] };
+            return { valid: false, errors: [t('validation.pluginsNonBooleanValue')] };
           }
         }
       }
@@ -133,30 +134,30 @@ function validateSettingsInternal(settings: unknown, collectDetails: boolean): {
   // 验证其他已知字段
   if (s.language !== undefined && typeof s.language !== 'string') {
     if (collectDetails) {
-      errors.push(`language 字段必须是字符串，实际为 ${typeof s.language}`);
+      errors.push(t('validation.fieldNotString', { field: 'language', type: typeof s.language }));
     } else {
-      return { valid: false, errors: ['language 字段类型无效'] };
+      return { valid: false, errors: [t('validation.fieldInvalidType', { field: 'language' })] };
     }
   }
   if (s.effortLevel !== undefined && typeof s.effortLevel !== 'string') {
     if (collectDetails) {
-      errors.push(`effortLevel 字段必须是字符串，实际为 ${typeof s.effortLevel}`);
+      errors.push(t('validation.fieldNotString', { field: 'effortLevel', type: typeof s.effortLevel }));
     } else {
-      return { valid: false, errors: ['effortLevel 字段类型无效'] };
+      return { valid: false, errors: [t('validation.fieldInvalidType', { field: 'effortLevel' })] };
     }
   }
   if (s.autoUpdatesChannel !== undefined && typeof s.autoUpdatesChannel !== 'string') {
     if (collectDetails) {
-      errors.push(`autoUpdatesChannel 字段必须是字符串，实际为 ${typeof s.autoUpdatesChannel}`);
+      errors.push(t('validation.fieldNotString', { field: 'autoUpdatesChannel', type: typeof s.autoUpdatesChannel }));
     } else {
-      return { valid: false, errors: ['autoUpdatesChannel 字段类型无效'] };
+      return { valid: false, errors: [t('validation.fieldInvalidType', { field: 'autoUpdatesChannel' })] };
     }
   }
   if (s.autoMemoryEnabled !== undefined && typeof s.autoMemoryEnabled !== 'boolean') {
     if (collectDetails) {
-      errors.push(`autoMemoryEnabled 字段必须是布尔值，实际为 ${typeof s.autoMemoryEnabled}`);
+      errors.push(t('validation.fieldNotBoolean', { field: 'autoMemoryEnabled', type: typeof s.autoMemoryEnabled }));
     } else {
-      return { valid: false, errors: ['autoMemoryEnabled 字段类型无效'] };
+      return { valid: false, errors: [t('validation.fieldInvalidType', { field: 'autoMemoryEnabled' })] };
     }
   }
 

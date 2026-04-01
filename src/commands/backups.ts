@@ -4,6 +4,7 @@ import path from 'path';
 import { getBackupsDir } from '../utils/file';
 import { success, info, warn } from '../utils/logger';
 import { BackupInfo } from '../types';
+import { t } from '../i18n';
 
 /**
  * 获取备份文件列表
@@ -67,15 +68,15 @@ function formatDateTime(isoString: string): string {
 export function initBackupsCommand(program: Command) {
   program
     .command('backups')
-    .description('列出所有备份文件')
-    .option('-j, --json', '以 JSON 格式输出')
+    .description(t('cli.backups.description'))
+    .option('-j, --json', t('cli.backups.optionJson'))
     .action(async (options) => {
       try {
         const backups = await getBackupList();
 
         if (backups.length === 0) {
-          warn('没有找到任何备份文件');
-          info(`备份目录: ${getBackupsDir()}`);
+          warn(t('warn.noBackups'));
+          info(t('info.backupDir', { path: getBackupsDir() }));
           return;
         }
 
@@ -84,7 +85,7 @@ export function initBackupsCommand(program: Command) {
           console.log(JSON.stringify(backups, null, 2));
         } else {
           // 表格格式输出
-          success(`找到 ${backups.length} 个备份文件:\n`);
+          success(t('info.foundBackups', { count: backups.length }));
 
           // 计算列宽
           const nameWidth = Math.max(35, ...backups.map(b => b.name.length));
@@ -93,9 +94,9 @@ export function initBackupsCommand(program: Command) {
 
           // 表头
           const header =
-            '名称'.padEnd(nameWidth) +
-            '创建时间'.padEnd(dateWidth) +
-            '大小'.padEnd(sizeWidth);
+            t('table.name').padEnd(nameWidth) +
+            t('table.createdAt').padEnd(dateWidth) +
+            t('table.size').padEnd(sizeWidth);
           console.log(header);
           console.log('-'.repeat(nameWidth + dateWidth + sizeWidth));
 
@@ -109,10 +110,10 @@ export function initBackupsCommand(program: Command) {
           }
 
           console.log('');
-          info(`备份目录: ${getBackupsDir()}`);
+          info(t('info.backupDir', { path: getBackupsDir() }));
         }
       } catch (err) {
-        console.error(`列出备份失败: ${err instanceof Error ? err.message : String(err)}`);
+        console.error(t('command.listFailed', { error: err instanceof Error ? err.message : String(err) }));
         process.exit(1);
       }
     });

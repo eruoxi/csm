@@ -3,9 +3,11 @@
  */
 
 import { ensureDir, pathExists, readJson, remove } from 'fs-extra';
+import { readFileSync } from 'fs';
 import { getCsmDir, getStatePath } from '../utils/file';
 import { writeJsonAtomic } from '../utils/atomicWrite';
-import type { CsmState } from '../types';
+import { t } from '../i18n';
+import type { CsmState, SupportedLanguage } from '../types';
 
 // 默认状态
 const DEFAULT_STATE: CsmState = {
@@ -60,7 +62,7 @@ export class StateManager {
                 return {
                     state: {...DEFAULT_STATE},
                     isCorrupted: true,
-                    corruptionError: '状态文件内容不是有效对象'
+                    corruptionError: t('internal.stateNotObject')
                 };
             }
 
@@ -72,7 +74,7 @@ export class StateManager {
                 return {
                     state: {...DEFAULT_STATE},
                     isCorrupted: true,
-                    corruptionError: 'activeProfile 字段类型无效'
+                    corruptionError: t('internal.activeProfileInvalid')
                 };
             }
 
@@ -84,21 +86,21 @@ export class StateManager {
 
             // 权限错误 - 使用 error.code 检测
             if (nodeError.code === 'EACCES' || nodeError.code === 'EPERM') {
-                console.warn(`警告: 无法读取状态文件 (权限问题): ${errorMessage}`);
+                console.warn(t('internal.stateReadPermission', { error: errorMessage }));
                 return {
                     state: {...DEFAULT_STATE},
                     isCorrupted: true,
-                    corruptionError: '权限不足，无法读取状态文件'
+                    corruptionError: t('internal.statePermissionDenied')
                 };
             }
 
             // JSON 解析错误 - 检查是否为 SyntaxError
             if (error instanceof SyntaxError) {
-                console.warn(`警告: 状态文件已损坏，将使用默认状态: ${errorMessage}`);
+                console.warn(t('internal.stateCorrupted', { error: errorMessage }));
                 return {
                     state: {...DEFAULT_STATE},
                     isCorrupted: true,
-                    corruptionError: '状态文件格式损坏'
+                    corruptionError: t('internal.stateFormatCorrupted')
                 };
             }
 
@@ -130,10 +132,10 @@ export class StateManager {
         if (isCorrupted) {
             try {
                 await remove(this.stateFile);
-                console.log('已重置损坏的状态文件');
+                console.log(t('internal.stateReset'));
                 return true;
             } catch (error) {
-                console.error(`无法删除损坏的状态文件: ${error instanceof Error ? error.message : String(error)}`);
+                console.error(t('internal.stateDeleteFailed', { error: error instanceof Error ? error.message : String(error) }));
                 return false;
             }
         }
@@ -153,6 +155,9 @@ export class StateManager {
      */
     async setActiveProfile(name: string | null): Promise<void> {
         const state = await this.read();
+        if (state.activeProfile === name) {
+            return;
+        }
         state.activeProfile = name;
         await this.write(state);
     }
@@ -163,6 +168,39 @@ export class StateManager {
     async getActiveProfile(): Promise<string | null> {
         const state = await this.read();
         return state.activeProfile;
+    }
+
+    /**
+     * 设置语言
+     */
+    async setLanguage(lang: SupportedLanguage): Promise<void> {
+        const state = await this.read();
+        if (state.language === lang) {
+            return;
+        }
+        state.language = lang;
+        await this.write(state);
+    }
+
+    /**
+     * 获取语言设置
+     */
+    async getLanguage(): Promise<SupportedLanguage | undefined> {
+        const state = await this.read();
+        return state.language;
+    }
+
+    /**
+     * 同步读取语言设置（用于 CLI 启动阶段）
+     */
+    getLanguageSync(): SupportedLanguage | undefined {
+        try {
+            const content = readFileSync(this.stateFile, 'utf-8');
+            const state = JSON.parse(content) as CsmState;
+            return state.language;
+        } catch {
+            return undefined;
+        }
     }
 }
 

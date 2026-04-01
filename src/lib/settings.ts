@@ -9,6 +9,7 @@ import { writeJsonAtomic } from '../utils/atomicWrite';
 import { mergeSettings } from './merge';
 import { normalizeSettings } from '../utils/normalize';
 import type { ClaudeSettings, MergeOptions } from '../types';
+import { t } from '../i18n';
 
 /** 默认最大备份数量 */
 const DEFAULT_MAX_BACKUPS = 10;
@@ -55,7 +56,7 @@ export class SettingsManager {
       const content = await fs.readJson(this.settingsPath);
       return content as ClaudeSettings;
     } catch (error) {
-      throw new Error(`Failed to read settings: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(t('internal.readSettingsFailed', { error: error instanceof Error ? error.message : String(error) }));
     }
   }
 
@@ -68,7 +69,7 @@ export class SettingsManager {
       const normalized = normalizeSettings(settings);
       await writeJsonAtomic(this.settingsPath, normalized, { spaces: 2 });
     } catch (error) {
-      throw new Error(`Failed to write settings: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(t('internal.writeSettingsFailed', { error: error instanceof Error ? error.message : String(error) }));
     }
   }
 
@@ -95,7 +96,7 @@ export class SettingsManager {
         backupPath = await this.backup();
       } catch {
         // 备份失败时继续，但记录警告
-        console.warn('警告: 无法创建备份，将直接写入');
+        console.warn(t('warn.backupCreateFailed'));
       }
     }
 
@@ -108,11 +109,11 @@ export class SettingsManager {
       if (backupPath && await fs.pathExists(backupPath)) {
         try {
           await fs.copy(backupPath, this.settingsPath);
-          console.warn('写入失败，已从备份恢复');
+          console.warn(t('warn.writeFailedRollback'));
         } catch {
           // 恢复失败，严重错误
           throw new Error(
-            `写入失败且无法恢复备份: ${writeError instanceof Error ? writeError.message : String(writeError)}`
+            t('internal.restoreBackupFailed', { error: writeError instanceof Error ? writeError.message : String(writeError) })
           );
         }
       }
@@ -127,7 +128,7 @@ export class SettingsManager {
   async backup(): Promise<string> {
     // 检查 settings 文件是否存在
     if (!(await fs.pathExists(this.settingsPath))) {
-      throw new Error('Settings file does not exist, nothing to backup');
+      throw new Error(t('internal.noSettingsToBackup'));
     }
 
     try {
@@ -147,7 +148,7 @@ export class SettingsManager {
 
       return backupPath;
     } catch (error) {
-      throw new Error(`Failed to create backup: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(t('internal.createBackupFailed', { error: error instanceof Error ? error.message : String(error) }));
     }
   }
 

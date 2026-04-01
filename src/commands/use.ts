@@ -2,12 +2,13 @@ import { Command } from 'commander';
 import inquirer from 'inquirer';
 import { ProfileManager } from '../lib/profile';
 import { SettingsManager } from '../lib/settings';
-import { StateManager } from '../lib/state';
+import { stateManager } from '../lib/state';
 import { mergeSettings } from '../lib/merge';
 import { success, error, info, warn } from '../utils/logger';
 import { handleCommandError } from '../utils/errors';
 import { highlightJson } from '../utils/logger';
 import type { MergeOptions } from '../types';
+import { t } from '../i18n';
 
 /**
  * 构建 MergeOptions
@@ -37,20 +38,20 @@ function buildMergeOptions(options: Record<string, unknown>): MergeOptions {
  */
 function displayMergeOptions(options: Record<string, unknown>): void {
   if (options.noMerge) {
-    info('合并模式: 完全替换');
+    info(t('info.mergeMode'));
   } else {
     const mergeDetails: string[] = [];
     if (options.merge) {
-      mergeDetails.push(`合并字段: ${options.merge}`);
+      mergeDetails.push(t('info.mergeFields', { fields: String(options.merge) }));
     }
     if (options.keepPermissions) {
-      mergeDetails.push('保留权限配置');
+      mergeDetails.push(t('info.keepPermissions'));
     }
     if (options.keepPlugins) {
-      mergeDetails.push('保留插件配置');
+      mergeDetails.push(t('info.keepPlugins'));
     }
     if (mergeDetails.length > 0) {
-      info(`合并选项: ${mergeDetails.join(', ')}`);
+      info(t('info.mergeOptions', { options: mergeDetails.join(', ') }));
     }
   }
 }
@@ -77,19 +78,19 @@ async function previewSwitch(
   const mergedSettings = mergeSettings(currentSettings, settings, mergeOptions);
 
   // 显示预览
-  info(`[预览模式] 切换到配置 "${name}" 的结果:`);
+  info(t('info.previewMode', { name }));
   console.log();
 
   // 显示合并选项
   displayMergeOptions(options);
 
   console.log();
-  info('合并后的配置:');
+  info(t('info.previewMerged'));
   console.log(highlightJson(mergedSettings));
 
   console.log();
-  warn('提示: 这是预览模式，配置未被实际修改');
-  info('移除 --dry-run 选项以实际执行切换');
+  warn(t('info.previewHint'));
+  info(t('info.previewUseReal'));
 }
 
 /**
@@ -99,8 +100,7 @@ async function executeSwitch(
   name: string,
   options: Record<string, unknown>,
   profileManager: ProfileManager,
-  settingsManager: SettingsManager,
-  stateManager: StateManager
+  settingsManager: SettingsManager
 ): Promise<void> {
   // dry-run 模式
   if (options.dryRun) {
@@ -117,21 +117,21 @@ async function executeSwitch(
   const mergedSettings = await settingsManager.applyProfile(settings, mergeOptions);
   await stateManager.setActiveProfile(name);
 
-  success(`已切换到配置 "${name}"`);
+  success(t('success.switched', { name }));
 
   // 显示合并详情
   displayMergeOptions(options);
 
   // 显示当前生效的设置关键字段
-  info(`设置文件: ${settingsManager.getSettingsPath()}`);
+  info(t('info.settingsFile', { path: settingsManager.getSettingsPath() }));
   if (mergedSettings.permissions) {
     const permCount = (mergedSettings.permissions.allow?.length || 0) +
       (mergedSettings.permissions.deny?.length || 0);
-    info(`权限规则: ${permCount} 条`);
+    info(t('info.permissionRules', { count: permCount }));
   }
   if (mergedSettings.enabledPlugins) {
     const pluginCount = Object.keys(mergedSettings.enabledPlugins).length;
-    info(`启用插件: ${pluginCount} 个`);
+    info(t('info.enabledPlugins', { count: pluginCount }));
   }
 }
 
@@ -140,15 +140,14 @@ async function executeSwitch(
  */
 async function interactiveSwitch(
   profileManager: ProfileManager,
-  settingsManager: SettingsManager,
-  stateManager: StateManager
+  settingsManager: SettingsManager
 ): Promise<void> {
   // 1. 获取所有 profiles
   const profiles = await profileManager.list();
 
   if (profiles.length === 0) {
-    warn('没有可用的配置');
-    info('使用 "csm create <name>" 创建一个新配置');
+    warn(t('warn.noProfiles'));
+    info(t('info.useCreateCommand'));
     return;
   }
 
@@ -159,7 +158,7 @@ async function interactiveSwitch(
   const choices = profiles.map(name => {
     const isActive = name === activeProfile;
     return {
-      name: isActive ? `${name} (当前)` : name,
+      name: isActive ? `${name} (${t('info.currentLabel')})` : name,
       value: name,
       short: name
     };
@@ -170,7 +169,7 @@ async function interactiveSwitch(
     {
       type: 'list',
       name: 'profile',
-      message: '选择要切换的配置:',
+      message: t('prompt.selectProfile'),
       choices,
       default: activeProfile || undefined
     }
@@ -180,7 +179,7 @@ async function interactiveSwitch(
 
   // 如果选择的是当前配置，不执行切换
   if (selectedName === activeProfile) {
-    info(`"${selectedName}" 已是当前配置`);
+    info(t('info.alreadyCurrent', { name: selectedName }));
     return;
   }
 
@@ -189,7 +188,7 @@ async function interactiveSwitch(
     {
       type: 'confirm',
       name: 'useMerge',
-      message: '是否保留某些当前设置?',
+      message: t('prompt.keepCurrentSettings'),
       default: false
     }
   ]);
@@ -201,12 +200,12 @@ async function interactiveSwitch(
       {
         type: 'checkbox',
         name: 'keepFields',
-        message: '选择要保留的字段:',
+        message: t('prompt.selectKeepFields'),
         choices: [
-          { name: '权限配置 (permissions)', value: 'permissions' },
-          { name: '插件配置 (enabledPlugins)', value: 'plugins' },
-          { name: '环境变量 (env)', value: 'env' },
-          { name: '其他设置', value: 'other' }
+          { name: t('prompt.keepPermissionsLabel'), value: 'permissions' },
+          { name: t('prompt.keepPluginsLabel'), value: 'plugins' },
+          { name: t('prompt.keepEnvLabel'), value: 'env' },
+          { name: t('prompt.keepOtherLabel'), value: 'other' }
         ]
       }
     ]);
@@ -227,7 +226,7 @@ async function interactiveSwitch(
         {
           type: 'input',
           name: 'otherFields',
-          message: '输入其他要保留的字段（逗号分隔）:',
+          message: t('prompt.inputOtherFields'),
         }
       ]);
       if (otherFieldsAnswer.otherFields) {
@@ -241,34 +240,33 @@ async function interactiveSwitch(
     }
   }
 
-  await executeSwitch(selectedName, options, profileManager, settingsManager, stateManager);
+  await executeSwitch(selectedName, options, profileManager, settingsManager);
 }
 
 export function initUseCommand(program: Command) {
   program
     .command('use [name]')
     .alias('switch')
-    .description('切换到指定配置（无参数时交互式选择）')
-    .option('--merge <fields>', '指定要合并的字段（逗号分隔）')
-    .option('--no-merge', '完全替换，不合并任何字段')
-    .option('--keep-permissions', '保留当前权限配置')
-    .option('--keep-plugins', '保留当前插件配置')
-    .option('--dry-run', '预览切换结果，不实际执行')
+    .description(t('cli.use.description'))
+    .option('--merge <fields>', t('cli.use.optionMerge'))
+    .option('--no-merge', t('cli.use.optionNoMerge'))
+    .option('--keep-permissions', t('cli.use.optionKeepPermissions'))
+    .option('--keep-plugins', t('cli.use.optionKeepPlugins'))
+    .option('--dry-run', t('cli.use.optionDryRun'))
     .action(async (name, options) => {
       try {
         const profileManager = new ProfileManager();
         const settingsManager = new SettingsManager();
-        const stateManager = new StateManager();
 
         if (name) {
           // 直接切换模式
-          await executeSwitch(name, options, profileManager, settingsManager, stateManager);
+          await executeSwitch(name, options, profileManager, settingsManager);
         } else {
           // 交互式选择模式
-          await interactiveSwitch(profileManager, settingsManager, stateManager);
+          await interactiveSwitch(profileManager, settingsManager);
         }
       } catch (err) {
-        handleCommandError(err, '切换');
+        handleCommandError(err, 'switchFailed');
       }
     });
 }

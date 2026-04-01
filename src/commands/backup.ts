@@ -5,6 +5,7 @@ import archiver from 'archiver';
 import { getBackupsDir, getProfilesDir, getSettingsPath, getStatePath } from '../utils/file';
 import { success, error, info } from '../utils/logger';
 import { handleCommandError } from '../utils/errors';
+import { t } from '../i18n';
 
 /**
  * 生成备份文件名
@@ -69,8 +70,8 @@ async function createZipArchive(
 export function initBackupCommand(program: Command) {
   program
     .command('backup')
-    .description('备份所有配置到压缩包')
-    .option('-n, --name <name>', '备份文件名，默认自动生成')
+    .description(t('cli.backup.description'))
+    .option('-n, --name <name>', t('cli.backup.optionName'))
     .action(async (options) => {
       try {
         // 1. 确保备份目录存在
@@ -92,21 +93,21 @@ export function initBackupCommand(program: Command) {
         const stateExist = await fs.pathExists(statePath);
 
         if (!profilesExist && !settingsExist && !stateExist) {
-          error('没有找到任何配置文件，无法创建备份');
+          error(t('error.noConfigToBackup'));
           return;
         }
 
         // 5. 创建压缩包
-        info('正在创建备份...');
+        info(t('info.backupCreating'));
         await createZipArchive(backupPath, profilesDir, settingsPath, statePath);
 
         // 6. 输出结果
         const stats = await fs.stat(backupPath);
         const sizeKB = (stats.size / 1024).toFixed(2);
-        success(`备份已创建: ${backupPath}`);
-        info(`文件大小: ${sizeKB} KB`);
+        success(t('success.backupCreated', { path: backupPath }));
+        info(t('info.backupSize', { size: sizeKB }));
       } catch (err) {
-        handleCommandError(err, '备份');
+        handleCommandError(err, 'backupFailed');
       }
     });
 }

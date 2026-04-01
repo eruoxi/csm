@@ -5,6 +5,7 @@ import { getProfilesDir } from '../utils/file';
 import { error, info, success } from '../utils/logger';
 import { handleCommandError } from '../utils/errors';
 import path from 'path';
+import { t } from '../i18n';
 
 /**
  * 获取可用的编辑器命令
@@ -53,8 +54,8 @@ function openEditor(filePath: string): boolean {
 export function initEditCommand(program: Command) {
   program
     .command('edit <name>')
-    .description('编辑配置档案')
-    .option('--no-open', '仅显示文件路径，不打开编辑器')
+    .description(t('cli.edit.description'))
+    .option('--no-open', t('cli.edit.optionNoOpen'))
     .action(async (name, options) => {
       try {
         const profileManager = new ProfileManager();
@@ -63,8 +64,8 @@ export function initEditCommand(program: Command) {
         const exists = await profileManager.exists(name);
 
         if (!exists) {
-          error(`配置档案 "${name}" 不存在。`);
-          info(`提示: 使用 "csm list" 查看所有可用配置`);
+          error(t('error.profileNotFound', { name }));
+          info(t('info.useListCommand'));
           process.exit(1);
         }
 
@@ -74,16 +75,16 @@ export function initEditCommand(program: Command) {
         if (options.open !== false) {
           const opened = openEditor(filePath);
           if (opened) {
-            success(`已打开编辑器: ${filePath}`);
+            success(t('success.editorOpened', { path: filePath }));
             return;
           }
         }
 
         // 3. 无法打开编辑器或用户指定不打开
-        info(`请使用外部编辑器编辑配置文件。`);
-        info(`配置文件路径: ${filePath}`);
+        info(t('info.editExternal'));
+        info(t('info.editPath', { path: filePath }));
       } catch (err) {
-        handleCommandError(err, '编辑配置档案');
+        handleCommandError(err, 'editFailed');
       }
     });
 }

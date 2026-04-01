@@ -2,11 +2,12 @@ import { Command } from 'commander';
 import { ProfileManager } from '../lib/profile';
 import { highlightJson, error, info } from '../utils/logger';
 import { handleCommandError } from '../utils/errors';
+import { t } from '../i18n';
 
 export function initShowCommand(program: Command) {
   program
     .command('show <name>')
-    .description('显示指定配置的详细内容')
+    .description(t('cli.show.description'))
     .action(async (name) => {
       try {
         const profileManager = new ProfileManager();
@@ -17,7 +18,7 @@ export function initShowCommand(program: Command) {
         // 2. 使用 highlightJson 显示内容
         console.log(highlightJson(settings));
       } catch (err) {
-        handleCommandError(err, '显示配置档案');
+        handleCommandError(err, 'showFailed');
       }
     });
 }

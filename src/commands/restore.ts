@@ -8,6 +8,7 @@ import { success, error, warn, info } from '../utils/logger';
 import { validateBackup, isEntryPathSafe } from '../utils/backupValidator';
 import { SettingsManager } from '../lib/settings';
 import { handleCommandError } from '../utils/errors';
+import { t } from '../i18n';
 
 /**
  * 创建恢复前的自动备份（仅备份当前 settings.json）
@@ -52,7 +53,7 @@ async function resolveBackupPath(backup: string): Promise<string> {
     return backupPath;
   }
 
-  throw new Error(`找不到备份文件: ${backup}`);
+  throw new Error(t('error.backupNotFound', { name: backup }));
 }
 
 /**
@@ -90,23 +91,23 @@ async function safeExtractBackup(backupPath: string): Promise<void> {
 export function initRestoreCommand(program: Command) {
   program
     .command('restore <backup>')
-    .description('从备份恢复配置')
-    .option('-f, --force', '覆盖现有配置，不询问')
-    .option('--skip-validation', '跳过备份验证')
-    .option('--no-auto-backup', '恢复前不自动备份当前配置')
+    .description(t('cli.restore.description'))
+    .option('-f, --force', t('cli.restore.optionForce'))
+    .option('--skip-validation', t('cli.restore.optionSkipValidation'))
+    .option('--no-auto-backup', t('cli.restore.optionNoAutoBackup'))
     .action(async (backup, options) => {
       try {
         // 1. 定位备份文件
         const backupPath = await resolveBackupPath(backup);
-        info(`找到备份文件: ${backupPath}`);
+        info(t('info.backupFound', { path: backupPath }));
 
         // 2. 验证备份文件
         if (!options.skipValidation) {
-          info('正在验证备份文件...');
+          info(t('info.backupValidating'));
           const validation = await validateBackup(backupPath);
 
           if (!validation.valid) {
-            error('备份文件验证失败:');
+            error(t('error.backupValidationFailed'));
             for (const err of validation.errors) {
               error(`  - ${err}`);
             }
@@ -121,15 +122,15 @@ export function initRestoreCommand(program: Command) {
           }
 
           // 显示备份内容预览
-          info('备份内容:');
+          info(t('info.backupContent'));
           if (validation.contents.hasSettings) {
-            info('  - settings.json');
+            info(`  - ${t('info.backupSettings')}`);
           }
           if (validation.contents.hasState) {
-            info('  - csm-state.json');
+            info(`  - ${t('info.backupState')}`);
           }
           if (validation.contents.profileCount > 0) {
-            info(`  - profiles/ (${validation.contents.profileCount} 个配置)`);
+            info(`  - ${t('info.backupProfiles', { count: validation.contents.profileCount })}`);
           }
         }
 
@@ -148,10 +149,10 @@ export function initRestoreCommand(program: Command) {
         // 4. 自动备份当前配置
         let autoBackupPath: string | null = null;
         if (hasExistingConfig && options.autoBackup !== false) {
-          info('正在备份当前配置...');
+          info(t('info.backupCurrent'));
           autoBackupPath = await createPreRestoreSettingsBackup();
           if (autoBackupPath) {
-            info(`当前配置已备份到: ${autoBackupPath}`);
+            info(t('info.backupCurrentDone', { path: autoBackupPath }));
           }
         }
 
@@ -161,43 +162,43 @@ export function initRestoreCommand(program: Command) {
             {
               type: 'confirm',
               name: 'confirm',
-              message: '这将覆盖现有配置，是否继续？',
+              message: t('prompt.confirmOverwrite'),
               default: false
             }
           ]);
 
           if (!answers.confirm) {
-            warn('操作已取消');
+            warn(t('warn.operationCancelled'));
             return;
           }
         }
 
         // 6. 解压到相应位置
-        info('正在恢复配置...');
+        info(t('info.backupRestoring'));
         await safeExtractBackup(backupPath);
 
         // 7. 输出恢复结果
-        success('配置已恢复');
-        info('已恢复的内容:');
+        success(t('success.configRestored'));
+        info(t('info.restoredContent'));
         if (await fs.pathExists(settingsPath)) {
-          info('  - settings.json');
+          info(`  - ${t('info.backupSettings')}`);
         }
         if (await fs.pathExists(statePath)) {
-          info('  - csm-state.json');
+          info(`  - ${t('info.backupState')}`);
         }
         if (await fs.pathExists(profilesDir)) {
           const profiles = (await fs.readdir(profilesDir)).filter(f => f.endsWith('.json'));
           if (profiles.length > 0) {
-            info(`  - profiles/ (${profiles.length} 个配置文件)`);
+            info(`  - ${t('info.backupProfileFiles', { count: profiles.length })}`);
           }
         }
 
         // 提示自动备份位置
         if (autoBackupPath) {
-          info(`如需回滚，可使用: csm restore ${path.basename(autoBackupPath)}`);
+          info(t('info.useRestoreCommand', { name: path.basename(autoBackupPath) }));
         }
       } catch (err) {
-        handleCommandError(err, '恢复');
+        handleCommandError(err, 'restoreFailed');
       }
     });
 }

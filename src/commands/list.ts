@@ -1,19 +1,19 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { ProfileManager } from '../lib/profile';
-import { StateManager } from '../lib/state';
+import { stateManager } from '../lib/state';
 import { info } from '../utils/logger';
+import { t } from '../i18n';
 
 export function initListCommand(program: Command) {
   program
     .command('list')
     .alias('ls')
-    .description('列出所有配置档案')
-    .option('-j, --json', '以 JSON 格式输出')
+    .description(t('cli.list.description'))
+    .option('-j, --json', t('cli.backups.optionJson'))
     .action(async (options) => {
       try {
         const profileManager = new ProfileManager();
-        const stateManager = new StateManager();
 
         // 1. 获取所有 profiles
         const profiles = await profileManager.list();
@@ -34,12 +34,12 @@ export function initListCommand(program: Command) {
         } else {
           // 格式化输出
           if (profiles.length === 0) {
-            info('暂无配置档案。使用 csm create <name> 创建新配置。');
+            info(t('info.noProfilesYet'));
             return;
           }
 
           console.log();
-          console.log(chalk.bold('配置档案列表:'));
+          console.log(chalk.bold(t('table.profileList')));
           console.log();
 
           for (const name of profiles) {
@@ -53,13 +53,13 @@ export function initListCommand(program: Command) {
           console.log();
 
           if (activeProfile) {
-            console.log(chalk.gray(`当前激活: ${activeProfile}`));
+            console.log(chalk.gray(t('info.activeProfile', { name: activeProfile })));
           } else {
-            console.log(chalk.gray('当前无激活的配置档案'));
+            console.log(chalk.gray(t('info.noActiveProfileLabel')));
           }
         }
       } catch (err) {
-        console.error(chalk.red(`列出配置档案失败: ${err instanceof Error ? err.message : String(err)}`));
+        console.error(chalk.red(t('command.listFailed', { error: err instanceof Error ? err.message : String(err) })));
         process.exit(1);
       }
     });

@@ -6,6 +6,7 @@ import { success, error, info } from '../utils/logger';
 import { validateProfileName } from '../utils/validator';
 import { handleCommandError } from '../utils/errors';
 import { ClaudeSettings } from '../types';
+import { t } from '../i18n';
 
 interface CreateAnswers extends Answers {
   configureBasic: boolean;
@@ -17,14 +18,14 @@ interface CreateAnswers extends Answers {
 export function initCreateCommand(program: Command) {
   program
     .command('create <name>')
-    .description('创建新的配置档案')
-    .option('-c, --copy-current', '从当前 settings.json 复制配置')
-    .option('-e, --empty', '创建空配置，跳过交互式设置')
+    .description(t('cli.create.description'))
+    .option('-c, --copy-current', t('cli.create.optionCopyCurrent'))
+    .option('-e, --empty', t('cli.create.optionEmpty'))
     .action(async (name, options) => {
       try {
         // 1. 验证名称格式
         if (!validateProfileName(name)) {
-          error('名称格式无效。只允许使用字母、数字、连字符和下划线。');
+          error(t('error.profileNameInvalid'));
           process.exit(1);
         }
 
@@ -33,8 +34,8 @@ export function initCreateCommand(program: Command) {
 
         // 2. 检查是否已存在
         if (await profileManager.exists(name)) {
-          error(`配置档案 "${name}" 已存在。`);
-          info(`提示: 使用 "csm show ${name}" 查看该配置`);
+          error(t('error.profileAlreadyExists', { name }));
+          info(t('info.useShowCommand', { name }));
           process.exit(1);
         }
 
@@ -44,9 +45,9 @@ export function initCreateCommand(program: Command) {
         if (options.copyCurrent) {
           try {
             settings = await settingsManager.read();
-            success('已从当前 settings.json 复制配置。');
+            success(t('success.configCopied'));
           } catch (err) {
-            error('无法读取当前 settings.json，将创建空配置。');
+            error(t('error.cannotReadSettings'));
           }
         } else if (!options.empty && process.stdin.isTTY) {
           // 4. 在交互环境下使用 inquirer 创建基础配置
@@ -54,31 +55,31 @@ export function initCreateCommand(program: Command) {
             {
               type: 'confirm',
               name: 'configureBasic',
-              message: '是否配置基础设置？',
+              message: t('prompt.configureBasic'),
               default: false
             },
             {
               type: 'input',
               name: 'language',
-              message: '设置语言 (留空跳过):',
+              message: t('prompt.setLanguage'),
               when: (ans) => ans.configureBasic
             },
             {
               type: 'list',
               name: 'effortLevel',
-              message: '选择努力级别:',
+              message: t('prompt.selectEffort'),
               choices: [
-                { name: 'low - 快速响应，适合简单任务', value: 'low' },
-                { name: 'medium - 平衡模式 (默认)', value: 'medium' },
-                { name: 'high - 深度思考，适合复杂任务', value: 'high' },
-                { name: '跳过此设置', value: '' }
+                { name: t('prompt.effortLow'), value: 'low' },
+                { name: t('prompt.effortMedium'), value: 'medium' },
+                { name: t('prompt.effortHigh'), value: 'high' },
+                { name: t('prompt.skipSetting'), value: '' }
               ],
               when: (ans) => ans.configureBasic
             },
             {
               type: 'confirm',
               name: 'autoMemoryEnabled',
-              message: '启用自动记忆？',
+              message: t('prompt.enableAutoMemory'),
               default: false,
               when: (ans) => ans.configureBasic
             }
@@ -100,9 +101,9 @@ export function initCreateCommand(program: Command) {
 
         // 6. 创建 profile 文件
         await profileManager.create(name, settings);
-        success(`配置档案 "${name}" 创建成功。`);
+        success(t('success.profileCreated', { name }));
       } catch (err) {
-        handleCommandError(err, '创建配置档案');
+        handleCommandError(err, 'createFailed');
       }
     });
 }

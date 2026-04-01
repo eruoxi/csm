@@ -4,13 +4,14 @@ import path from 'path';
 import { ProfileManager } from '../lib/profile';
 import { success, error, info } from '../utils/logger';
 import { handleCommandError } from '../utils/errors';
+import { t } from '../i18n';
 
 export function initExportCommand(program: Command) {
   program
     .command('export <name>')
-    .description('导出指定配置为 JSON 文件')
-    .option('-o, --output <dir>', '输出目录，默认当前目录')
-    .option('-f, --filename <filename>', '输出文件名，默认使用配置名')
+    .description(t('cli.export.description'))
+    .option('-o, --output <dir>', t('cli.export.optionOutput'))
+    .option('-f, --filename <filename>', t('cli.export.optionFilename'))
     .action(async (name, options) => {
       try {
         // 1. 获取 profile settings
@@ -33,10 +34,10 @@ export function initExportCommand(program: Command) {
 
         // 3. 写入 JSON 文件（格式化输出）
         await fs.writeJson(outputPath, settings, { spaces: 2 });
-        success(`成功导出配置到: ${outputPath}`);
+        success(t('success.configExported', { path: outputPath }));
 
       } catch (err) {
-        handleCommandError(err, '导出');
+        handleCommandError(err, 'exportFailed');
       }
     });
 }
