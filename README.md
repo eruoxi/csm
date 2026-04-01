@@ -60,6 +60,13 @@ csm use
 | `csm switch`     | 交互式选择切换 (use 的别名) |
 | `csm current`    | 显示当前激活配置 |
 
+### 语言设置
+
+| 命令                        | 说明                   |
+|-----------------------------|------------------------|
+| `csm lang [language]`       | 设置或切换显示语言     |
+| `csm language [language]`   | 同上 (lang 的别名)     |
+
 ### 导入导出
 
 | 命令                      | 说明            |
@@ -75,6 +82,26 @@ csm use
 | `csm backup`           | 备份所有配置到 zip 文件 |
 | `csm restore <backup>` | 从备份恢复配置        |
 | `csm backups`          | 列出所有备份文件       |
+
+## 语言设置
+
+```bash
+# 交互式选择语言
+csm lang
+
+# 直接设置为英文
+csm lang en-US
+
+# 临时使用英文执行命令
+csm --lang en-US list
+```
+
+语言优先级：
+1. 命令行 `--lang` 参数
+2. 持久化设置 (通过 `csm lang` 命令保存)
+3. 环境变量 `CSM_LANG`
+4. 系统语言检测
+5. 默认中文
 
 ## 配置合并策略
 
@@ -176,6 +203,16 @@ csm use custom --no-merge
 ```
 -j, --json                以 JSON 格式输出
 ```
+
+### lang 命令选项
+
+```
+[language]                 语言代码 (zh-CN 或 en-US)，不提供则交互式选择
+```
+
+支持的语言：
+- `zh-CN` - 简体中文 (默认)
+- `en-US` - English
 
 ## 数据存储
 
