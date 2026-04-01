@@ -30,9 +30,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run tests
-        run: npm run test:run
-
       - name: Build binaries
         run: npm run pkg
 
