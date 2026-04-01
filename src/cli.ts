@@ -46,7 +46,7 @@ initShowCommand(program);
 initEditCommand(program);
 initDeleteCommand(program);
 initListCommand(program);
-initUseCommand(program);  // 包含 switch 别名
+initUseCommand(program);
 initCurrentCommand(program);
 initImportCommand(program);
 initExportCommand(program);

@@ -7,6 +7,7 @@ import { readFileSync } from 'fs';
 import { getCsmDir, getStatePath } from '../utils/file';
 import { writeJsonAtomic } from '../utils/atomicWrite';
 import { t } from '../i18n';
+import { getErrorMessage } from '../utils/errors';
 import type { CsmState, SupportedLanguage } from '../types';
 
 // 默认状态
@@ -30,6 +31,7 @@ interface StateReadResult {
 export class StateManager {
     private csmDir: string;
     private stateFile: string;
+    private cachedLanguage: SupportedLanguage | undefined | null = null; // null = 未缓存
 
     constructor() {
         this.csmDir = getCsmDir();
@@ -81,7 +83,7 @@ export class StateManager {
             return { state, isCorrupted: false };
         } catch (error) {
             // 区分错误类型
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage = getErrorMessage(error);
             const nodeError = error as NodeJS.ErrnoException;
 
             // 权限错误 - 使用 error.code 检测
@@ -135,7 +137,7 @@ export class StateManager {
                 console.log(t('internal.stateReset'));
                 return true;
             } catch (error) {
-                console.error(t('internal.stateDeleteFailed', { error: error instanceof Error ? error.message : String(error) }));
+                console.error(t('internal.stateDeleteFailed', { error: getErrorMessage(error) }));
                 return false;
             }
         }
@@ -180,6 +182,7 @@ export class StateManager {
         }
         state.language = lang;
         await this.write(state);
+        this.cachedLanguage = lang;
     }
 
     /**
@@ -191,14 +194,21 @@ export class StateManager {
     }
 
     /**
-     * 同步读取语言设置（用于 CLI 启动阶段）
+     * 同步读取语言设置（用于 CLI 启动阶段，带缓存）
      */
     getLanguageSync(): SupportedLanguage | undefined {
+        // 返回缓存值
+        if (this.cachedLanguage !== null) {
+            return this.cachedLanguage;
+        }
+
         try {
             const content = readFileSync(this.stateFile, 'utf-8');
             const state = JSON.parse(content) as CsmState;
-            return state.language;
+            this.cachedLanguage = state.language ?? undefined;
+            return this.cachedLanguage;
         } catch {
+            this.cachedLanguage = undefined;
             return undefined;
         }
     }

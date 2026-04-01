@@ -8,6 +8,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import unzipper from 'unzipper';
 import { t } from '../i18n';
+import { getErrorMessage } from './errors';
 
 export interface BackupValidationResult {
   valid: boolean;
@@ -100,7 +101,7 @@ export async function validateBackup(backupPath: string): Promise<BackupValidati
     }
   } catch (error) {
     result.valid = false;
-    result.errors.push(t('error.backupCorrupted', { error: error instanceof Error ? error.message : String(error) }));
+    result.errors.push(t('error.backupCorrupted', { error: getErrorMessage(error) }));
     return result;
   }
 
@@ -149,7 +150,7 @@ export async function validateBackup(backupPath: string): Promise<BackupValidati
 
   } catch (error) {
     result.valid = false;
-    result.errors.push(t('error.backupInvalidFormat', { error: error instanceof Error ? error.message : String(error) }));
+    result.errors.push(t('error.backupInvalidFormat', { error: getErrorMessage(error) }));
   }
 
   return result;

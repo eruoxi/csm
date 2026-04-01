@@ -1,7 +1,3 @@
-/**
- * CSM 国际化模块
- */
-
 import zhCN from './zh-CN.json';
 import enUS from './en-US.json';
 import type { SupportedLanguage } from '../types';
@@ -29,9 +25,6 @@ export function isValidLanguage(lang: string): lang is SupportedLanguage {
   return SUPPORTED_LANGUAGES.includes(lang as SupportedLanguage);
 }
 
-/**
- * 检测系统语言
- */
 export function detectLanguage(): SupportedLanguage {
   // 1. 检查环境变量 CSM_LANG
   const csmLang = process.env.CSM_LANG;
@@ -79,10 +72,6 @@ export function getLanguage(): SupportedLanguage {
   return currentLanguage;
 }
 
-/**
- * 翻译函数
- * 支持嵌套键 (如 "error.profileNotFound") 和参数占位符 (如 {name})
- */
 export function t(key: string, params?: Record<string, string | number>): string {
   const dict = translations[currentLanguage];
 

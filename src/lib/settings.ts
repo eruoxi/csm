@@ -10,6 +10,7 @@ import { mergeSettings } from './merge';
 import { normalizeSettings } from '../utils/normalize';
 import type { ClaudeSettings, MergeOptions } from '../types';
 import { t } from '../i18n';
+import { getErrorMessage } from '../utils/errors';
 
 /** 默认最大备份数量 */
 const DEFAULT_MAX_BACKUPS = 10;
@@ -56,7 +57,7 @@ export class SettingsManager {
       const content = await fs.readJson(this.settingsPath);
       return content as ClaudeSettings;
     } catch (error) {
-      throw new Error(t('internal.readSettingsFailed', { error: error instanceof Error ? error.message : String(error) }));
+      throw new Error(t('internal.readSettingsFailed', { error: getErrorMessage(error) }));
     }
   }
 
@@ -69,7 +70,7 @@ export class SettingsManager {
       const normalized = normalizeSettings(settings);
       await writeJsonAtomic(this.settingsPath, normalized, { spaces: 2 });
     } catch (error) {
-      throw new Error(t('internal.writeSettingsFailed', { error: error instanceof Error ? error.message : String(error) }));
+      throw new Error(t('internal.writeSettingsFailed', { error: getErrorMessage(error) }));
     }
   }
 
@@ -113,7 +114,7 @@ export class SettingsManager {
         } catch {
           // 恢复失败，严重错误
           throw new Error(
-            t('internal.restoreBackupFailed', { error: writeError instanceof Error ? writeError.message : String(writeError) })
+            t('internal.restoreBackupFailed', { error: getErrorMessage(writeError) })
           );
         }
       }
@@ -148,7 +149,7 @@ export class SettingsManager {
 
       return backupPath;
     } catch (error) {
-      throw new Error(t('internal.createBackupFailed', { error: error instanceof Error ? error.message : String(error) }));
+      throw new Error(t('internal.createBackupFailed', { error: getErrorMessage(error) }));
     }
   }
 

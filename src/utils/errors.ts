@@ -115,10 +115,16 @@ export function formatError(error: unknown): string {
     return message;
   }
 
+  return getErrorMessage(error);
+}
+
+/**
+ * 从 unknown error 中提取错误消息字符串
+ */
+export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
-
   return String(error);
 }
 
